@@ -9,3 +9,9 @@ _C.*
 outputs/*
 checkpoints/*.pt
 demo/backend/checkpoints/*.pt
+
+# webui artifacts
+webui/static/uploads/*
+!webui/static/uploads/.gitkeep
+webui/results/*
+!webui/results/.gitkeep

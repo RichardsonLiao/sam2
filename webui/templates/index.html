@@ -1,0 +1,65 @@
+<!doctype html>
+<html>
+<head>
+  <title>SAM2 Video Demo</title>
+  <style>
+    #frame {position: relative; display: inline-block;}
+    #overlay {position: absolute; top: 0; left: 0;}
+  </style>
+</head>
+<body>
+<h1>SAM2 Video Demo</h1>
+<form id="upload-form" enctype="multipart/form-data">
+  <input type="file" name="video" accept="video/mp4" required />
+  <button type="submit">Upload</button>
+</form>
+<div id="frame"></div>
+<button id="process-btn">Process</button>
+<a id="download-link" href="#" download="result.mp4" style="display:none;">Download Result</a>
+<script>
+let points = [];
+document.getElementById('upload-form').onsubmit = async function(e) {
+    e.preventDefault();
+    let formData = new FormData(this);
+    let r = await fetch('/upload', {method:'POST', body:formData});
+    let res = await r.json();
+    let img = new Image();
+    img.src = res.frame;
+    img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.id = 'overlay';
+        canvas.width = img.width;
+        canvas.height = img.height;
+        canvas.addEventListener('click', async ev => {
+            const rect = canvas.getBoundingClientRect();
+            const x = ev.clientX - rect.left;
+            const y = ev.clientY - rect.top;
+            points.push({x:x, y:y, label:1});
+            await fetch('/add_point', {
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({x:x, y:y, label:1})
+            });
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = 'red';
+            ctx.beginPath();
+            ctx.arc(x, y, 4, 0, 2 * Math.PI);
+            ctx.fill();
+        });
+        const container = document.getElementById('frame');
+        container.innerHTML = '';
+        container.appendChild(img);
+        container.appendChild(canvas);
+    };
+};
+
+document.getElementById('process-btn').onclick = async () => {
+    let r = await fetch('/process', {method:'POST'});
+    let res = await r.json();
+    const link = document.getElementById('download-link');
+    link.href = res.download;
+    link.style.display = 'block';
+};
+</script>
+</body>
+</html>
